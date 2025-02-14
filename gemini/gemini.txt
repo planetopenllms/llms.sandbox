@@ -1,0 +1,43 @@
+
+gemma notes
+
+A family of lightweight, state-of-the art open models
+built from the same research and technology used to create the Gemini models
+
+- gemma @ https://ai.google.dev/gemma
+- docs @ <https://ai.google.dev/gemma/docs>
+         <https://ai.google.dev/gemma/docs/pytorch_gemma>
+         <https://github.com/google/gemma_pytorch>
+- cookbook @ <https://github.com/google-gemini/gemma-cookbook>
+
+
+gemini notes
+
+
+- sign up (for gemini api key) @ <https://aistudio.google.com>
+- docs @ <https://ai.google.dev/docs>
+
+- cookbook @ <https://ai.google.dev/gemini-api/cookbook>
+              <https://github.com/google-gemini/cookbook>
+              <https://github.com/google-gemini/cookbook/blob/main/quickstarts/System_instructions.ipynb>
+ <https://github.com/google-gemini/cookbook/blob/main/quickstarts/Models.ipynb>
+
+- models @ <https://ai.google.dev/gemini-api/docs/models/gemini>
+           <https://ai.google.dev/models/gemini>
+- embedding guides @ <https://ai.google.dev/gemini-api/docs/embeddings>
+  - <https://ai.google.dev/gemini-api/tutorials/document_search>
+
+- python sdk (library) @ <https://pypi.org/project/google-generativeai/> - Google Generative AI High level API client library and tools
+
+
+
+gemini-1.5-flash
+Free:
+- 15 RPM
+- 1 million TPM
+- 1,500 RPD
+
+RPM: Requests per minute
+TPM: Tokens per minute
+RPD: Requests per day
+TPD: Tokens per day
