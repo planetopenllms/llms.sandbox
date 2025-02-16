@@ -1,15 +1,34 @@
 
+> micrograd is the only piece of code you need to train neural networks. 
+> Everything else is just efficiency.
+
+
 # Micrograd V2
 
 The Micrograd library / code by Andrej Karpathy reworked / extended
 to make it work with ndarrays (not just scalars).
 
-See <https://github.com/karpathy/micrograd> for the original.
+See <https://github.com/karpathy/micrograd> for the original 
+and <https://github.com/EurekaLabsAI/micrograd> for the official follow-up.
+
+
+> In this module we build a tiny "autograd" engine (short for automatic gradient) that 
+> implements the backpropagation algorithm, as it was prominently popularized 
+> for training neural networks in the 1986 paper [Learning Internal Representations by Error Propagation](https://stanford.edu/~jlmcc/papers/PDP/Volume%201/Chap8_PDP86.pdf) by Rumelhart, Hinton and Williams. 
+>
+> The code we build here is the heart of neural network training - it allows us to calculate
+> how we should update the parameters of a neural network in order to make it better at some
+> task, such as the one of next token prediction in autoregressive language models. This exact
+> same algorithm is used in all modern deep learning libraries, such as PyTorch, TensorFlow,
+> JAX, and others, except that those libraries are much more optimized and feature-rich.
+
 
 
 What else is different?
 
 - uses numpy.ndarray for Tensor values
+  - all Tensors use np.float32 (not the default np.float64 or int64)
+- adds a (PyTorch-like) require_grad flag
 - adds "typed" tensor classes for operations e.g. _Add, _Mul, _Relu, etc.
   -  "inline" backward closure "unrolled" into a normal method in 
       the "typed" tensor classes

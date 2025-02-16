@@ -17,7 +17,7 @@ def test_grads():
     y.backward()
     xmt, ymt = x, y
 
-    x = torch.Tensor([-4.0]).double()
+    x = torch.Tensor([-4.0]) 
     x.requires_grad = True
     z = 2 * x + 2 + x
     q = z.relu() + z * x
@@ -50,8 +50,8 @@ def test_more_grads():
     g.backward()
     amt, bmt, gmt = a, b, g
 
-    a = torch.Tensor([-4.0]).double()
-    b = torch.Tensor([2.0]).double()
+    a = torch.Tensor([-4.0]) 
+    b = torch.Tensor([2.0])  
     a.requires_grad = True
     b.requires_grad = True
     c = a + b
@@ -76,3 +76,31 @@ def test_more_grads():
 
 
 
+def test_more_grads_cont():
+
+    a = Tensor(-4.0)
+    b = Tensor(2.0)
+    c = a + b
+    d = a.tanh()
+    e = Tensor(1.0).log()
+    f = (e-c).exp()
+    f.backward()
+    amt, bmt, fmt = a, b, f
+
+    a = torch.Tensor([-4.0]) 
+    b = torch.Tensor([2.0])   
+    a.requires_grad = True
+    b.requires_grad = True
+    c = a + b
+    d = a.tanh()
+    e = torch.Tensor([1.0]).log()
+    f = (e-c).exp()
+    f.backward()
+    apt, bpt, fpt = a, b, f
+
+    tol = 1e-6
+    # forward pass went well
+    assert abs(fmt.value - fpt.data.item()) < tol
+    # backward pass went well
+    assert abs(amt.grad - apt.grad.item()) < tol
+    assert abs(bmt.grad - bpt.grad.item()) < tol

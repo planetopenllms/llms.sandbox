@@ -14,7 +14,7 @@ class Tensor:
         self.value = np.array(value, dtype=np.float32)
         self.grad  = np.zeros_like( self.value )
     
-        self._children = set(children)    ## check - keep set (or use list) - why? why not?
+        self._children = children   
         self._label    = label
 
     def __repr__(self):
@@ -75,6 +75,19 @@ class Tensor:
     def relu(self):
         print( f"  build relu a {self}")
         return _Relu(self)
+
+    def tanh(self):
+        print( f"  build tanh a {self}")
+        return _Tanh(self)
+
+    def exp(self):
+        print( f"  build exp a {self}")
+        return _Exp(self)
+
+    def log(self):
+        print( f"  build (natural) log a {self}")
+        return _Log(self)
+
 
 
     def __neg__(self): # -self            -- turn neg(ation) in mul(tiplication) by -1
@@ -154,21 +167,41 @@ class _Pow(Tensor):
 
 
 class _Relu(Tensor):
-    ## static method helpers
-    def calc(x):
-       return np.maximum( 0, x )
-    
-    def calc_deriv(x):
-       return np.where(x > 0, 1, 0)
-
     def __init__(self, a): 
-        super().__init__(value=_Relu.calc( a.value ), children=(a,))
+        super().__init__(value=np.maximum( 0.0, a.value), children=(a,))
         self._a = a
 
     def _backward(self, grad):
-        self._a.grad += grad * _Relu.calc_deriv( self._a.value ) 
+        self._a.grad += grad * (self._a.value > 0.0) 
         print( f"  backward _Relu grad a {self._a.grad}")
-        
 
- 
+
+class _Tanh(Tensor):
+    def __init__(self, a):
+        super().__init__(value=np.tanh( a.value), children=(a,))
+        self._a = a
+    
+    def _backward(self, grad):
+        self._a.grad += (1 - self.value**2) * grad
+        print( f"  backward _Tanh grad a {self._a.grad}")
+
+class _Exp(Tensor):
+    def __init__(self, a):
+        super().__init__(value=np.exp( a.value ), children=(a,))
+        self._a = a
+
+    def _backward(self, grad):  
+        self._a.grad += self.value * grad
+        print( f"  backward _Exp grad a {self._a.grad}")
+
+class _Log(Tensor):
+    def __init__(self, a):
+        super().__init__(value=np.log( a.value ), children=(a,))
+        self._a = a
+
+    def _backward(self, grad):
+        ## or use 1/self._a * grad ???
+        self._a.grad +=  grad / self._a.value
+        print( f"  backward _Log grad a {self._a.grad}")
+
 
