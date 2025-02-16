@@ -65,10 +65,10 @@ class Tensor:
         print( f"  build __mul__ a {self} * b {other}")
         return _Mul(self, other)
 
-    def __pow__(self, other):
-        assert isinstance(other, (int, float)), "only supporting int/float powers for now"
-        print( f"  build __pow__ a {self} ** b {other}")
-        return _Pow(self, other)
+    def __pow__(self, pow):
+        assert isinstance(pow, (int, float)), "only supporting int/float powers for now"
+        print( f"  build __pow__ a {self} ** {pow}")
+        return _Pow(self, pow)
 
 
 
@@ -115,6 +115,22 @@ class Tensor:
 
     def __rtruediv__(self, other): # other / self
         return Tensor(other) / self  
+
+
+    ##########
+    ## more operations
+    def mm(self, other):
+        ##  note -  use __matmul__ now built-into python (via @) - why? why not?
+        ##    keep mm as alias?
+        print( f"  build mm a {self} @ b {other}")
+        return _MatMul( self, other )
+ 
+    def sum(self, axis):
+        assert isinstance(axis, int), "only supporting int for axis for now"
+        print( f"  build __sum__ a {self} axis={axis}")
+        return _Sum( self, axis )
+
+
 
 
 
@@ -205,3 +221,26 @@ class _Log(Tensor):
         print( f"  backward _Log grad a {self._a.grad}")
 
 
+class _MatMul(Tensor):
+    def __init__(self, a, b): 
+        assert a.value.ndim == b.value.ndim
+        super().__init__(value=np.matmul( a.value, b.value), children=(a,b)) 
+        self._a = a
+        self._b = b
+
+    def _backward(self, grad):
+        self._a.grad +=  np.matmul( grad, self._b.value.T )
+        self._b.grad +=  np.matmul( self._a.value.T, grad )
+        print( f"  backward _MatMul grad a {self._a.grad}, b {self._b.grad}")
+
+
+class _Sum(Tensor):
+    def __init__(self,a,axis):
+        super().__init__(value=a.value.sum(axis=axis), children=(a,))
+        self._a    = a
+        self._axis = axis
+
+    def _backward(self, grad):
+        ##  todo - check if grad formula is working/good - why? why not? 
+        self._a.grad += np.ones_like(self.value) * np.expand_dims(grad, axis=self._axis)
+        print( f"  backward _Sum(axis={self._axis}) grad a {self._a.grad}")
