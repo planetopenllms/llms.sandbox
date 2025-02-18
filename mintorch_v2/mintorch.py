@@ -2,17 +2,22 @@ import numpy as np
 
 
 
+##
+## todo - for compat with PyTorch change value back to data - why? why not?
+##             check others - who is using value or data or ___??
 
 class Tensor:    
     def __init__(
             self, 
             value, 
             children=(),
+            requires_grad=False,
             label=None           ## todo/fix - add requires_grad=None - why? why not? 
     ):   
         ## note - ALWAYS use float32  (NOT default is float64 or int64)!!!
-        self.value = np.array(value, dtype=np.float32)
-        self.grad  = np.zeros_like( self.value )
+        self.value         = np.array(value, dtype=np.float32)
+        self.grad          = np.zeros_like( self.value )
+        self.requires_grad = requires_grad
     
         self._children = children   
         self._label    = label
@@ -27,11 +32,14 @@ class Tensor:
 
 
     def backward(self):
+        ## assert self.value.ndim == 0, f"backward can only be called for scalar tensors, but it has shape {self.value.shape})"
+
         # topological order all of the children in the graph
         topo = []
         visited = set()
         def build_topo(v):
-            if v not in visited:
+            ## todo/check - add v._children too for requires grad check? - why? why not?
+            if v.requires_grad and v not in visited:
                 visited.add(v)
                 for child in v._children:
                     build_topo(child)
@@ -39,11 +47,13 @@ class Tensor:
         build_topo(self)
 
         # go one variable at a time and apply the chain rule to get its gradient
+        # fill in the first grad with one.  
         self.grad = np.ones_like( self.value )
 
         print( f"==> topo ({len(topo)}):\n", topo )
 
         for v in reversed(topo):
+            ## assert (v.grad is not None)
             print( f"  call backward - {v.__class__.__name__} w/ grad {v.grad.shape} {v.grad}")
             v._backward()
 
@@ -75,6 +85,11 @@ class Tensor:
     def relu(self):
         print( f"  build relu a {self}")
         return _Relu(self)
+
+    def sigmoid(self):
+        print( f"  build sigmoid a {self}" )
+        return _Sigmoid(self)
+
 
     def tanh(self):
         print( f"  build tanh a {self}")
@@ -116,7 +131,6 @@ class Tensor:
     def __rtruediv__(self, other): # other / self
         return Tensor(other) / self  
 
-
     ##########
     ## more operations
     def mm(self, other):
@@ -131,13 +145,17 @@ class Tensor:
         return _Sum( self, axis )
 
 
-
-
-
+    def expand(self, dim, copies):
+        assert isinstance(dim, int),    "only supporting int for dim for now"
+        assert isinstance(copies, int), "only supporting int for copies for now"
+        ## change dim to axis - why? why not?
+        return _Expand( self, dim, copies )      
+  
 
 class _Add(Tensor):
     def __init__(self, a, b):
-        super().__init__(value=a.value + b.value, children=(a, b))
+        super().__init__(value=a.value + b.value, 
+                         children=(a, b), requires_grad=a.requires_grad or b.requires_grad )
         self._a = a
         self._b = b
 
@@ -148,7 +166,8 @@ class _Add(Tensor):
 
 class _Sub(Tensor):
     def __init__(self, a, b):
-        super().__init__(value=a.value - b.value, children=(a, b))
+        super().__init__(value=a.value - b.value, 
+                         children=(a, b), requires_grad=a.requires_grad or b.requires_grad )
         self._a = a
         self._b = b
 
@@ -161,7 +180,8 @@ class _Sub(Tensor):
 
 class _Mul(Tensor):
     def __init__(self, a, b):
-        super().__init__(value=a.value * b.value, children=(a, b))
+        super().__init__(value=a.value * b.value, 
+                         children=(a, b), requires_grad=a.requires_grad or b.requires_grad)
         self._a = a
         self._b = b
 
@@ -173,7 +193,9 @@ class _Mul(Tensor):
 
 class _Pow(Tensor):
     def __init__(self, a, pow):
-        super().__init__(value=a.value**pow, children=(a,))
+        ## note - use np.power( a.value, pow ) - why? why not?
+        super().__init__(value=a.value ** pow, 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a   = a
         self._pow = pow
 
@@ -184,7 +206,8 @@ class _Pow(Tensor):
 
 class _Relu(Tensor):
     def __init__(self, a): 
-        super().__init__(value=np.maximum( 0.0, a.value), children=(a,))
+        super().__init__(value=np.maximum( 0.0, a.value), 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a = a
 
     def _backward(self):
@@ -192,18 +215,37 @@ class _Relu(Tensor):
         print( f"  backward _Relu grad a {self._a.grad}")
 
 
+class _Sigmoid(Tensor):
+    def __init__(self, a): 
+        super().__init__(value=(1 / (1 + np.exp(-a.value))), 
+                         children=(a,), requires_grad=a.requires_grad)
+        self._a = a
+
+    def _backward(self):
+        ## todo/check formula for deriv 
+        ones = np.ones_like( self.grad )
+        self._a.grad +=  self.grad * (self.value * (ones - self.value )) 
+        print( f"  backward _Sigmoid grad a {self._a.grad}")
+
+  
+
 class _Tanh(Tensor):
     def __init__(self, a):
-        super().__init__(value=np.tanh( a.value), children=(a,))
+        super().__init__(value=np.tanh( a.value), 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a = a
     
     def _backward(self):
-        self._a.grad += (1 - self.value**2) * self.grad
+        ## notes - use self.value*self.value   for self.value**2
+        ##         use simply 1   for   ones = np.ones_like( self.grad )  ???
+        ones = np.ones_like( self.grad )
+        self._a.grad += (ones - self.value**2) * self.grad
         print( f"  backward _Tanh grad a {self._a.grad}")
 
 class _Exp(Tensor):
     def __init__(self, a):
-        super().__init__(value=np.exp( a.value ), children=(a,))
+        super().__init__(value=np.exp( a.value ), 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a = a
 
     def _backward(self):  
@@ -212,7 +254,8 @@ class _Exp(Tensor):
 
 class _Log(Tensor):
     def __init__(self, a):
-        super().__init__(value=np.log( a.value ), children=(a,))
+        super().__init__(value=np.log( a.value ), 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a = a
 
     def _backward(self):
@@ -224,7 +267,8 @@ class _Log(Tensor):
 class _MatMul(Tensor):
     def __init__(self, a, b): 
         assert a.value.ndim == b.value.ndim
-        super().__init__(value=np.matmul( a.value, b.value), children=(a,b)) 
+        super().__init__(value=np.matmul( a.value, b.value), 
+                         children=(a,b), requires_grad=a.requires_grad or b.requires_grad) 
         self._a = a
         self._b = b
 
@@ -236,11 +280,36 @@ class _MatMul(Tensor):
 
 class _Sum(Tensor):
     def __init__(self,a,axis):
-        super().__init__(value=a.value.sum(axis=axis), children=(a,))
+        super().__init__(value=a.value.sum(axis=axis), 
+                         children=(a,), requires_grad=a.requires_grad)
         self._a    = a
         self._axis = axis
 
     def _backward(self):
         ##  todo - check if grad formula is working/good - why? why not? 
-        self._a.grad += np.ones_like(self.value) * np.expand_dims(self.grad, axis=self._axis)
+        ones = np.ones_like(self.value)
+        self._a.grad += ones * np.expand_dims(self.grad, axis=self._axis)
         print( f"  backward _Sum(axis={self._axis}) grad a {self._a.grad}")
+
+## use?  why? why not?  from grokking deep learning
+#                   if("sum" in self.creation_op):
+#                     dim = int(self.creation_op.split("_")[1])
+#                     self.creators[0].backward(self.grad.expand(dim,
+#                        self.creators[0].data.shape[dim]))
+   
+class _Expand(Tensor):
+    def __init__(self, a, dim, copies):
+        trans_cmd = list(range(0,len(a.value.shape)))
+        trans_cmd.insert(dim,len(a.value.shape))
+        new_value = a.value.repeat(copies).reshape(list(a.value.shape) + [copies]).transpose(trans_cmd)
+
+        super().__init__(value=new_value, 
+                         children=(a,), requires_grad=a.requires_grad)
+        self._a      = a
+        self._dim    = dim
+        self._copies = copies
+
+    def _backward(self):
+        self._a.grad += self.grad.sum(axis=self._dim)
+        print( f"  backward _Expand(dim={self._dim}) grad a {self._a.grad}")
+                 

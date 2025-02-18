@@ -1,7 +1,4 @@
 
-> micrograd is the only piece of code you need to train neural networks. 
-> Everything else is just efficiency.
-
 
 # Micrograd V2
 
@@ -65,9 +62,9 @@ class _Add(Tensor):
         self._a = a
         self._b = b
 
-    def _backward(self, grad):
-        self._a.grad += grad 
-        self._b.grad += grad 
+    def _backward(self):
+        self._a.grad += self.grad 
+        self._b.grad += self.grad 
 ```
 
 
@@ -101,8 +98,8 @@ class _Pow(Tensor):
         self._a   = a
         self._pow = pow
 
-    def _backward(self, grad):
-        self._a.grad += grad * (self._pow * self._a.value ** (self._pow-1))
+    def _backward(self):
+        self._a.grad += self.grad * (self._pow * self._a.value ** (self._pow-1))
 ```
 
 
