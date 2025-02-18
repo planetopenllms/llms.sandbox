@@ -15,8 +15,8 @@ target = Tensor( [[0],[1],[0],[1]] )
 ##  HIDDEN_DIM = 3
 ##  OUTPUT_DIM = 1
 
-w = [ Tensor( np.random.rand(2,3)),
-      Tensor( np.random.rand(3,1))
+w = [ Tensor( np.random.rand(2,3), requires_grad=True ),
+      Tensor( np.random.rand(3,1), requires_grad=True )
     ]
 
 

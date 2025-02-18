@@ -31,8 +31,8 @@ class Linear(Layer):
     def __init__(self, n_inputs, n_outputs):
         super().__init__()
         W = np.random.randn(n_inputs, n_outputs) * np.sqrt(2.0/(n_inputs))
-        self.weight = Tensor(W)                    # , autograd=True)
-        self.bias   = Tensor(np.zeros(n_outputs))  # , autograd=True)
+        self.weight = Tensor(W, requires_grad=True)                    
+        self.bias   = Tensor(np.zeros(n_outputs), requires_grad=True)  
         
         self.parameters.append(self.weight)
         self.parameters.append(self.bias)
@@ -61,4 +61,29 @@ class Sequential(Layer):
         for l in self.layers:
             params += l.get_parameters()
         return params
+    
+
+class Tanh(Layer):
+  def __init__(self):
+      super().__init__()
+  def forward(self, input):
+      return input.tanh()
+
+class Sigmoid(Layer):
+  def __init__(self):
+      super().__init__()
+  def forward(self, input):
+      return input.sigmoid()
+
+
+
+###
+# loss layers
+class MSELoss(Layer):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, pred, target):
+          ## or use alternative  (pred - target) * (pred - target) instead of power (**2)? 
+        return ((pred - target)**2).sum(axis=0)
     
