@@ -111,8 +111,14 @@ def test_math():
 #      division
 ##       is    x/y =  x*y**-1  
 
-    print( np.sqrt( 25 ), 25**0.5 )    #=>   5  / 5
+    print( "np.sqrt( 25 )", np.sqrt( 25 ), 25**0.5 )    #=>   5  / 5
     assert np.sqrt( 25 ) == 25**0.5
+    assert np.sqrt( 25 ) == np.pow( 25, 0.5 )
+
+    print( "1/np.sqrt( 25 )", 1/np.sqrt( 25 ), np.pow( 25, -0.5 ) )
+    assert 1/np.sqrt( 25 ) == np.pow( 25, -0.5 )   ## e.g.  1/sqrt(25) = 25**-0.5
+    assert 1/np.sqrt( 25 ) == 25**-0.5 
+    
 
     print( 25 / 5, 25 * 5**-1, 5**-1 )    #=> 5 / 5 / 0.2  
     assert 25 / 5 == 25 * 5**-1
