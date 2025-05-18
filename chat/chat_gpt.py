@@ -6,9 +6,6 @@ machinery to get the api key via .env?
 """
 
 
-"""
- note - double check - streaming NOT working with gemini api?
-"""
 
 import os
 import sys
@@ -61,10 +58,11 @@ def main():
 
             # Stream and display each token
             for chunk in response:
-                if 'choices' in chunk:
-                    token = chunk['choices'][0]['delta'].get('content', '')
-                    print(token, end="", flush=True)
-                    assistant_message += token
+                ## if 'choices' in chunk:
+                ##    token = chunk['choices'][0]['delta'].get('content', '')
+                token = chunk.choices[0].delta.content
+                print( token, end="", flush=True)
+                assistant_message += token
 
             print()  # newline after complete response
             # Add assistant response to conversation history
